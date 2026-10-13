@@ -1,14 +1,15 @@
 
 from datetime import date, datetime, timezone
 
+from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
-from app.db.models import DailyStep, Workout
-from app.db.database import get_db
+from app.db.database import SessionLocal
+from app.db.models import DailyStep, DataSource, Workout
 from app.ingestion.apple_health_exporter import parse_apple_health_exporter_health_export, parse_apple_health_exporter_workouts_export
 
-session = next(get_db())
+APPLE_HEALTH_SOURCE_TYPE = "apple_health"
 
 def ingest(payload: dict, person_id: int) -> None:
     """
@@ -18,20 +19,31 @@ def ingest(payload: dict, person_id: int) -> None:
         payload (dict): The data to be ingested.
         person_id (int): The ID of the person for whom to ingest data.
     """
-    try:
+    with SessionLocal() as session:
         if payload.get("exportInfo") and "dataTypes" in payload["exportInfo"]:
             daily_steps = parse_apple_health_exporter_health_export(payload)
             for date, steps in daily_steps.items():
                 upsert_daily_steps(session, person_id, date, steps)
-        elif payload.get("exportInfo") and "activityTypes" in payload["exportInfo"]:
+
+        if payload.get("exportInfo") and "activityTypes" in payload["exportInfo"]:
             workouts = parse_apple_health_exporter_workouts_export(payload)
-            source_id = 1 #TODO
-            for workout_uuid, workout_data in workouts.items():
+            for workout_data in workouts.values():
+                source_id = get_or_create_data_source_id(
+                    session, workout_data["source_name"]
+                )
                 upsert_workout(session, person_id, source_id, workout_data)
 
-    except Exception as e:
-        print("An error occurred during ingestion:", e)
-        raise
+
+def get_or_create_data_source_id(db: Session, source_name: str) -> int:
+    statement = insert(DataSource).values(
+        name=source_name,
+        type=APPLE_HEALTH_SOURCE_TYPE,
+    )
+    statement = statement.on_conflict_do_nothing(index_elements=["name"])
+    db.execute(statement)
+    return db.execute(
+        select(DataSource.id).where(DataSource.name == source_name)
+    ).scalar_one()
 
 
 def upsert_daily_steps(db: Session, person_id: int, date: date, steps: int) -> None:
@@ -72,6 +84,5 @@ def upsert_workout(db: Session, person_id: int, source_id:int, workout_data: dic
             "updated_at": datetime.now(timezone.utc)
         },
     )
-    print(statement)
     db.execute(statement)
     db.commit()
