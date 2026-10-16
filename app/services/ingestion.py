@@ -9,29 +9,38 @@ from app.db.database import SessionLocal
 from app.db.models import DailyStep, DataSource, Workout
 from app.ingestion.apple_health_exporter import parse_apple_health_exporter_health_export, parse_apple_health_exporter_workouts_export
 
+from app.schemas.health import HealthMonitoringPayload, WorkoutPayload
+
 APPLE_HEALTH_SOURCE_TYPE = "apple_health"
 
-def ingest(payload: dict, person_id: int) -> None:
+def ingest_health_data(payload: HealthMonitoringPayload, person_id: int) -> None:
     """
-    Ingests the provided payload into the database.
+    Ingests the provided health's monitoring data payload into the database.
+
+    Args:
+        payload (HealthMonitoringPayload): The data to be ingested.
+        person_id (int): The ID of the person for whom to ingest data.
+    """
+    with SessionLocal() as session:
+        daily_steps = parse_apple_health_exporter_health_export(payload)
+        for date, steps in daily_steps.items():
+            upsert_daily_steps(session, person_id, date, steps)
+
+def ingest_workouts_data(payload: WorkoutPayload, person_id: int) -> None:
+    """
+    Ingests the provided workouts' payload into the database.
 
     Args:
         payload (dict): The data to be ingested.
         person_id (int): The ID of the person for whom to ingest data.
     """
     with SessionLocal() as session:
-        if payload.get("exportInfo") and "dataTypes" in payload["exportInfo"]:
-            daily_steps = parse_apple_health_exporter_health_export(payload)
-            for date, steps in daily_steps.items():
-                upsert_daily_steps(session, person_id, date, steps)
-
-        if payload.get("exportInfo") and "activityTypes" in payload["exportInfo"]:
-            workouts = parse_apple_health_exporter_workouts_export(payload)
-            for workout_data in workouts.values():
-                source_id = get_or_create_data_source_id(
-                    session, workout_data["source_name"]
-                )
-                upsert_workout(session, person_id, source_id, workout_data)
+        workouts = parse_apple_health_exporter_workouts_export(payload)
+        for workout_data in workouts.values():
+            source_id = get_or_create_data_source_id(
+                session, workout_data["source_name"]
+            )
+            upsert_workout(session, person_id, source_id, workout_data)
 
 
 def get_or_create_data_source_id(db: Session, source_name: str) -> int:
