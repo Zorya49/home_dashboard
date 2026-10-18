@@ -1,12 +1,16 @@
 from app.db.database import SessionLocal, engine
 from app.db.models import Base, Person
 
-from app.services.ingestion import ingest
+from fastapi import FastAPI, Header, HTTPException
 
-import json
+from app.schemas.health import HealthMonitoringPayload, WorkoutPayload
+from app.services.ingestion import ingest_health_data, ingest_workouts_data
 
+from app.config import ingestion_token
+
+INGESTION_TOKEN = ingestion_token()
 PEOPLE = {1: "Person1"}
-
+app = FastAPI()
 
 
 def init_db() -> None:
@@ -15,17 +19,18 @@ def init_db() -> None:
         for person_id, name in PEOPLE.items():
             session.merge(Person(id=person_id, name=name))
 
+init_db()
 
-if __name__ == "__main__":
-    init_db()
+@app.post("/api/v1/health")
+def health(payload: HealthMonitoringPayload, authorization: str = Header()):
+    if authorization != f"Bearer {INGESTION_TOKEN}":
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    with open("./data/input/workouts_export_1791117041_3017C9B0.json") as file:
-        data = json.load(file)
-        ingest(data, 1)
+    ingest_health_data(payload, 1)
 
-    # with open("./data/input/health_export_1791116863_F1C1FAA6.json") as file:
-    #     data = json.load(file)
-    #     ingest(data, 1)
+@app.post("/api/v1/workouts")
+def workouts(payload: WorkoutPayload, authorization: str = Header()):
+    if authorization != f"Bearer {INGESTION_TOKEN}":
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-
-    
+    ingest_workouts_data(payload, 1)

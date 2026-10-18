@@ -31,7 +31,7 @@ def parse_apple_health_exporter_health_export(payload: HealthMonitoringPayload) 
     daily_steps = {}
 
     for record in payload.daily_steps:
-        date = parse_date(record.date)
+        date = record.date.date()
         steps = record.value
 
         if date and steps is not None:
@@ -53,7 +53,7 @@ def parse_apple_health_exporter_workouts_export(payload: WorkoutPayload) -> dict
     workouts = {}
 
     for record in payload.workouts:
-        date = parse_date(record.end_date)
+        date = record.end_date.date()
         workout_type = record.activity_type
         indoor = record.indoor
         statistics = record.statistics
