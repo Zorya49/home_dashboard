@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f5f2">
+  <title>Movement</title>
+  <link rel="stylesheet" href="/static/dashboard.css?v=3">
+</head>
+<body>
+  <main class="dashboard">
+    <section class="card chart-card" aria-labelledby="steps-title">
+      <div class="card-heading">
+        <h2 id="steps-title">Steps this year</h2>
+        <p class="card-subtitle">Cumulative steps · January to December</p>
+      </div>
+      <div class="chart-scroll">
+        <svg id="steps-chart" class="steps-chart" viewBox="0 0 1200 340" role="img"
+             aria-labelledby="chart-title chart-description">
+          <title id="chart-title">Cumulative steps during the current year</title>
+          <desc id="chart-description">A comparison of yearly step totals for you and your spouse.</desc>
+        </svg>
+      </div>
+    </section>
+
+    <div class="summary-grid">
+      <section class="card summary-card" aria-labelledby="workouts-title">
+        <h2 id="workouts-title">Workouts</h2>
+        <p class="card-subtitle">Sessions completed by year</p>
+        <div id="workout-totals" class="workout-totals"></div>
+      </section>
+
+      <section class="card summary-card" aria-labelledby="week-title">
+        <h2 id="week-title">Steps this week</h2>
+        <p class="card-subtitle">Total for the last 7 days</p>
+        <div id="weekly-totals" class="weekly-totals"></div>
+      </section>
+    </div>
+  </main>
+  <script src="/static/dashboard.js?v=2"></script>
+</body>
+</html>

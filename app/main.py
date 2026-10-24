@@ -4,12 +4,17 @@ from app.db.models import Base, Person
 from typing import Annotated
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException, Depends
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import insert, select
+from pathlib import Path
 
 from app.schemas.health import HealthMonitoringPayload, WorkoutPayload
 from app.services.ingestion import ingest_health_data, ingest_workouts_data
 
 from app.config import ingestion_token_me, ingestion_token_spouse
+
+APP_DIR = Path(__file__).parent
 
 USERS = [
     {"name": "Me", "external_identifier": "me"},
@@ -67,6 +72,11 @@ def authenticated_person_id(authorization: Annotated[str | None, Header()] = Non
 
 
 app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    return FileResponse(APP_DIR / "templates" / "dashboard.html")
 
 @app.post("/api/v1/health")
 def health(payload: HealthMonitoringPayload, person_id: Annotated[int, Depends(authenticated_person_id)]):
