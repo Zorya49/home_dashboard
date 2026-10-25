@@ -10,7 +10,9 @@ from sqlalchemy import insert, select
 from pathlib import Path
 
 from app.schemas.health import HealthMonitoringPayload, WorkoutPayload
+from app.schemas.dashboard import DashboardResponse
 from app.services.ingestion import ingest_health_data, ingest_workouts_data
+from app.services.dashboard import get_dashboard_data
 
 from app.config import ingestion_token_me, ingestion_token_spouse
 
@@ -77,6 +79,10 @@ app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 @app.get("/", include_in_schema=False)
 def dashboard():
     return FileResponse(APP_DIR / "templates" / "dashboard.html")
+
+@app.get("/api/v1/dashboard", response_model=DashboardResponse)
+def dashboard_data() -> DashboardResponse:
+    return get_dashboard_data()
 
 @app.post("/api/v1/health")
 def health(payload: HealthMonitoringPayload, person_id: Annotated[int, Depends(authenticated_person_id)]):

@@ -23,7 +23,7 @@ class WorkoutExportInfo(ContractModel):
 class WorkoutItem(ContractModel):
     activity_type: str = Field(alias="activityType", min_length=1)
     end_date: datetime = Field(alias="endDate")
-    indoor: bool
+    indoor: bool = False
     source: str = Field(min_length=1)
     statistics: dict
     uuid: str = Field(min_length=1)

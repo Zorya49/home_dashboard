@@ -1,33 +1,4 @@
-// Replace this sample object with values supplied by the dashboard endpoint.
-var dashboardData = {
-  year: 2026,
-  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-  stepSeries: [
-    {
-      label: "Me",
-      color: "#343832",
-      values: [42000, 60000, 76000, 101000, 128000, 145000, 141000, 160000, 179000, 232000, null, null]
-    },
-    {
-      label: "Spouse",
-      color: "#b29748",
-      values: [8000, 19000, 39000, 112000, 145000, 160000, 194000, 228000, 276000, 368000, null, null]
-    }
-  ],
-  workouts: [
-    { year: 2024, count: 61 },
-    { year: 2025, count: 73 },
-    { year: 2026, count: 17 }
-  ],
-  lastSevenDays: [
-    { label: "Me", count: 43724 },
-    { label: "Spouse", count: 53371 }
-  ]
-};
-
 var svgNamespace = "http://www.w3.org/2000/svg";
-
-document.title = "Movement — " + dashboardData.year;
 
 function makeSvgElement(name, attributes, text) {
   var element = document.createElementNS(svgNamespace, name);
@@ -44,11 +15,11 @@ function formatNumber(value) {
   return value.toLocaleString("en-US");
 }
 
-function renderChart() {
+function renderChart(dashboardData) {
   var svg = document.getElementById("steps-chart");
-  var chart = { left: 72, right: 1050, top: 18, bottom: 282, maximum: 400000 };
+  var chart = { left: 72, right: 1050, top: 18, bottom: 282, maximum: 4000000 };
 
-  [0, 100000, 200000, 300000, 400000].forEach(function (value) {
+  [0, 1000000, 2000000, 3000000, 4000000].forEach(function (value) {
     var y = chart.bottom - (value / chart.maximum) * (chart.bottom - chart.top);
     svg.appendChild(makeSvgElement("line", {
       x1: chart.left,
@@ -63,7 +34,7 @@ function renderChart() {
         y: y + 4,
         "text-anchor": "end",
         "class": "chart-axis-label"
-      }, (value / 1000) + "k"));
+      }, (value / 1000000) + "M"));
     }
   });
 
@@ -120,7 +91,7 @@ function renderChart() {
   });
 }
 
-function renderSummaries() {
+function renderSummaries(dashboardData) {
   var workoutContainer = document.getElementById("workout-totals");
   dashboardData.workouts.forEach(function (item) {
     var column = document.createElement("div");
@@ -152,5 +123,37 @@ function renderSummaries() {
   });
 }
 
-renderChart();
-renderSummaries();
+function renderDashboard(dashboardData) {
+  document.title = "Movement — " + dashboardData.year;
+  renderChart(dashboardData);
+  renderSummaries(dashboardData);
+}
+
+function showDashboardError(message) {
+  var error = document.getElementById("dashboard-error");
+  error.textContent = message;
+  error.hidden = false;
+}
+
+var request = new XMLHttpRequest();
+request.open("GET", "/api/v1/dashboard");
+request.onload = function () {
+  if (request.status < 200 || request.status >= 300) {
+    showDashboardError("Dashboard data could not be loaded (HTTP " + request.status + ").");
+    return;
+  }
+
+  var dashboardData;
+  try {
+    dashboardData = JSON.parse(request.responseText);
+  } catch (error) {
+    showDashboardError("Dashboard data could not be read: " + error.message);
+    return;
+  }
+
+  renderDashboard(dashboardData);
+};
+request.onerror = function () {
+  showDashboardError("Dashboard data could not be loaded. Check the server connection and try again.");
+};
+request.send();
