@@ -76,7 +76,7 @@ def authenticated_person_id(authorization: Annotated[str | None, Header()] = Non
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 
-@app.get("/", include_in_schema=False)
+@app.get("/dashboard")
 def dashboard():
     return FileResponse(APP_DIR / "templates" / "dashboard.html")
 

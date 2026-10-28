@@ -46,8 +46,6 @@ def fetch_monthly_steps_data(db: Session) -> list[DashboardStepSeries]:
             .order_by(Person.name, extract("month", DailyStep.date).label("month"))
         ).all()
 
-    print(steps_data)
-
     me_label = get_me_label(db)
     spouse_label = get_spouse_label(db)
     monthly_steps_me, cumulative_steps_me = [], []
