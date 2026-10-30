@@ -1,17 +1,19 @@
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import extract, func, select
-from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
 from app.db.models import DailyStep, DataSource, Person, Workout
-
+from app.config import application_timezone
 from app.schemas.dashboard import DashboardResponse, DashboardStepSeries, DashboardWeeklySteps, DashboardWorkoutTotal
 
 MONTHS=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 ME_EXT_ID = "me"
 SPOUSE_EXT_ID = "spouse"
+
+def application_today() -> date:
+    return datetime.now(application_timezone()).date()
 
 def get_dashboard_data() -> DashboardResponse:
     
@@ -21,7 +23,7 @@ def get_dashboard_data() -> DashboardResponse:
         last_week_steps = fetch_last_seven_days_steps_data(session)
 
         dashboard_data = DashboardResponse(
-            year=date.today().year,
+            year=application_today().year,
             months=MONTHS,
             stepSeries=step_series,
             workouts=workouts,
@@ -30,7 +32,7 @@ def get_dashboard_data() -> DashboardResponse:
     return dashboard_data
 
 def fetch_monthly_steps_data(db: Session) -> list[DashboardStepSeries]:
-    current_year = date.today().year
+    current_year = application_today().year
 
     steps_data = db.execute(
             select(
@@ -91,7 +93,7 @@ def fetch_monthly_steps_data(db: Session) -> list[DashboardStepSeries]:
         ]
 
 def fetch_last_three_years_workout_data(db: Session) -> list[DashboardWorkoutTotal]:
-    current_year = date.today().year
+    current_year = application_today().year
     first_year = current_year - 2
 
     rows = db.execute(
@@ -116,8 +118,8 @@ def fetch_last_three_years_workout_data(db: Session) -> list[DashboardWorkoutTot
     ]
 
 def fetch_last_seven_days_steps_data(db: Session) -> list[DashboardWeeklySteps]:
-    start_time = date.today() - timedelta(days=7)
-    end_time = date.today() - timedelta(days=1)
+    start_time = application_today() - timedelta(days=7)
+    end_time = application_today() - timedelta(days=1)
 
     steps_data = db.execute(
         select(

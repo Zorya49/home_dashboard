@@ -1,6 +1,6 @@
 import os
-
 from dotenv import load_dotenv
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 load_dotenv()
 
@@ -21,3 +21,14 @@ def ingestion_token_me() -> str:
 
 def ingestion_token_spouse() -> str:
     return _required_token("INGESTION_TOKEN_SPOUSE")
+
+
+def application_timezone() -> ZoneInfo:
+    name = os.getenv("APP_TIMEZONE")
+    if not name:
+        raise RuntimeError("APP_TIMEZONE must be configured")
+
+    try:
+        return ZoneInfo(name)
+    except ZoneInfoNotFoundError as exc:
+        raise RuntimeError(f"Unknown APP_TIMEZONE: {name}") from exc
