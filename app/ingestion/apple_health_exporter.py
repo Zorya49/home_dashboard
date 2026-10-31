@@ -1,20 +1,14 @@
 from math import floor
 from datetime import date, datetime
 
-from app.schemas.health import (
-    HealthMonitoringPayload, 
-    DailyStepsItem,
-    WorkoutPayload,
-    WorkoutItem
-)
+from app.config import application_timezone
+from app.schemas.health import HealthMonitoringPayload, WorkoutPayload
 
-def parse_date(value: str) -> date:
-    if "T" in value:
-        return datetime.fromisoformat(
-            value.replace("Z", "+00:00")
-        ).date()
+def parse_to_server_date(value: datetime) -> date:
+    if value.tzinfo is None or value.utcoffset() is None:
+        return value.date()
 
-    return date.fromisoformat(value)
+    return value.astimezone(application_timezone()).date()
 
 
 def parse_apple_health_exporter_health_export(payload: HealthMonitoringPayload) -> dict:
@@ -31,7 +25,7 @@ def parse_apple_health_exporter_health_export(payload: HealthMonitoringPayload) 
     daily_steps = {}
 
     for record in payload.daily_steps:
-        date = record.date.date()
+        date = parse_to_server_date(record.date)
         steps = record.value
 
         if date and steps is not None:
@@ -53,7 +47,7 @@ def parse_apple_health_exporter_workouts_export(payload: WorkoutPayload) -> dict
     workouts = {}
 
     for record in payload.workouts:
-        date = record.end_date.date()
+        date = parse_to_server_date(record.end_date)
         workout_type = record.activity_type
         indoor = record.indoor
         statistics = record.statistics

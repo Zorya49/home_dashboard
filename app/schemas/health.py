@@ -39,7 +39,7 @@ class WorkoutPayload(ContractModel):
             raise ValueError("'workouts'list lenght must match declared 'workoutCount' value.")
         return self
 
-# ---- Health monitoring payload schema ----
+# ---- Health monitoring payload schemas ----
 class DailyStepsItem(ContractModel):
     date: datetime
     value: float = Field(ge=0, le=100000)
@@ -69,10 +69,3 @@ class WorkoutRequest(ContractModel):
 class HealthMonitoringRequest(ContractModel):
     type: Literal["health_monitoring"]
     payload: HealthMonitoringPayload
-
-
-
-# ApiRequest = Annotated[
-#     WorkoutRequest | HealthMonitoringRequest,
-#     Field(discriminator="type")
-# ]

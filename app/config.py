@@ -1,8 +1,11 @@
 import os
 from dotenv import load_dotenv
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from pathlib import Path
 
 load_dotenv()
+
+APP_DIR = Path(__file__).parent
 
 def database_url() -> str:
     return os.getenv("DATABASE_URL", "sqlite:///./data/dashboard.db")
@@ -24,11 +27,11 @@ def ingestion_token_spouse() -> str:
 
 
 def application_timezone() -> ZoneInfo:
-    name = os.getenv("APP_TIMEZONE")
-    if not name:
+    timezone = os.getenv("APP_TIMEZONE")
+    if not timezone:
         raise RuntimeError("APP_TIMEZONE must be configured")
 
     try:
-        return ZoneInfo(name)
+        return ZoneInfo(timezone)
     except ZoneInfoNotFoundError as exc:
-        raise RuntimeError(f"Unknown APP_TIMEZONE: {name}") from exc
+        raise RuntimeError(f"Unknown APP_TIMEZONE: {timezone}") from exc
